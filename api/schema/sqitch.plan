@@ -1,0 +1,7 @@
+%syntax-version=1.0.0
+%project=everify
+%uri=https://github.com/JoshLarouche/bcgov-hackathon-email-verificathon/tree/main/api
+
+appschema 2023-06-06T21:47:08Z Andrea <Andrea.Williams@gov.bc.ca> # Add schema for all email verification objects.
+verified_email [appschema] 2023-06-06T22:18:10Z Andrea <Andrea.Williams@gov.bc.ca> # Creates table to track verified email addresses
+otp [verified_email appschema] 2023-06-06T22:12:35Z Andrea <Andrea.Williams@gov.bc.ca> # Creates table to track OTPs with email addresses
