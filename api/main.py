@@ -66,6 +66,10 @@ class OTPRequest(BaseModel):
     email_address: str
     auth_provider_uuid: str
 
+class OTPRequest(BaseModel):
+    email_address: str
+    auth_provider_uuid: str
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
