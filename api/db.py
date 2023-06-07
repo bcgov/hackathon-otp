@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, Session
 
 Base = declarative_base()
 

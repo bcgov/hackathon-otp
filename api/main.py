@@ -10,7 +10,7 @@ import urllib.parse
 import math, random
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from api.db import OneTimePassword, VerifiedEmail, get_email_id
+from db import OneTimePassword, VerifiedEmail, get_email_id
 
 import emailService 
 from typing import Annotated, Optional

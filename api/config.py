@@ -1,3 +1,4 @@
+import os
 class Config(object):
   
     CHES_CLIENT_ID = os.environ.get('CHES_CLIENT_ID')
