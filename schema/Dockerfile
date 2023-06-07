@@ -1,3 +1,7 @@
 FROM sqitch/sqitch
 
-CMD ["sqitch", "deploy"]
+WORKDIR /schema
+COPY . /schema
+
+ENTRYPOINT [ "/bin/sqitch" ]
+CMD ["deploy"]
