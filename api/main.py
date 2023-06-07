@@ -40,7 +40,7 @@ class OneTimePassword(Base):
 
     id = Column(Integer, primary_key=True)
     otp = Column(String)
-    created_at = Column(DateTime)
+    created_at = Mapped[Optional[DateTime]]
     email_id = Column(Integer)
     #email_id = mapped_column(ForeignKey("verified_email.id"))
 
@@ -57,9 +57,10 @@ class VerifyRequest(BaseModel):
     email_address: str
 
 class RequestToVerify(BaseModel):
-    email_id: int
+    email_id: Optional[int]
     one_time_password: str
-    redirect_url: str
+    email_address: str
+    auth_provider_uuid: str
 
 class OTPRequest(BaseModel):
     email_address: str
@@ -69,21 +70,20 @@ class OTPRequest(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
-async def get_email_id(email_address: str, auth_provider: str):
+async def get_email_id(email_address: str, auth_provider: str, session: Session):
     """
     Returns the ID (primary key) from verified_email table that matches 
     the given email_address and auth_provider
     """
-    with Session(engine) as session:
-        results = session.select(VerifiedEmail).where(VerifiedEmail.email_address.match(email_address)).where(VerifiedEmail.auth_provider_uuid.match(auth_provider)).all()
-
+    results = session.select(VerifiedEmail).where(VerifiedEmail.email_address.match(email_address)).where(VerifiedEmail.auth_provider_uuid.match(auth_provider)).first()
+    return results.id
 
 @app.get("/verify_page", response_class=HTMLResponse)
 async def verify_page(request: Request, email_address: str = "missing", redirect_url="test redirect"):
     return templates.TemplateResponse("verify.html", 
                                       {"request": request, 
                                        "email_address": email_address, 
-                                       "redirect_url": urllib.parse.quote(email_address)
+                                       "redirect_url": urllib.parse.quote(email_address),
                                        "validation_failed": False})
    
 
@@ -107,18 +107,22 @@ async def verify(email_address: Annotated[str, Form()],
     print(email_address)
     print(one_time_password)
     print(redirect_url)
-
-    # If validation succeeds
-    return RedirectResponse(urllib.parse.unquote(redirect_url))
- 
-    # If validation fails
-    return templates.TemplateResponse("verify.html", {"request": {}, 
-                                                      "email_address": email_address,
-                                                      "validation_failed": True})
     """
     Verify an email address given the OTP and ID of the record
     """
- 
+    with Session(engine) as session:
+        email_id = get_email_id(email_address, auth_provider='1', session=session)
+        
+        session.query(VerifiedEmail)\
+            .where()
+
+        # If validation succeeds
+        return RedirectResponse(urllib.parse.unquote(redirect_url))
+
+        # If validation fails
+        return templates.TemplateResponse("verify.html", {"request": {}, 
+                                                      "email_address": email_address,
+                                                      "validation_failed": True})
 @app.post("/create_otp/")
 async def generate_otp(request: OTPRequest):
     """
@@ -137,18 +141,22 @@ async def generate_otp(request: OTPRequest):
         #TODO check if email and authprovider already match
         exist = session.query(VerifiedEmail).filter(
             VerifiedEmail.email_address == request.email_address, VerifiedEmail.auth_provider_uuid == request.auth_provider_uuid).first()
-        print(exist.id, exist.email_address)
         if exist:
+            print(exist.id, exist.email_address)
             raise HTTPException(
                 status_code=400, detail="email already exists")
-
+        else:
+            print('Creating new VerifiedEmail record...')
+            
         y = VerifiedEmail(auth_provider_uuid = request.auth_provider_uuid, email_address = request.email_address)
         session.add(y)
 
         session.commit()
-        session.refresh(request)
+        session.refresh(y)
 
-        x = OneTimePassword(email_id = request.id, otp = password)
+        print(y.id)
+
+        x = OneTimePassword(email_id = y.id, otp = password)
 
         session.add(x)
         session.commit()
