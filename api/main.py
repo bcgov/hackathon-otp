@@ -82,11 +82,17 @@ async def verify_page(request: Request, email_address: str = "missing", redirect
    
 
 @app.get("/is_verified")
-async def check_verification():
+async def check_verification(id: int):
     """ Returns boolean value indicating whether provided email address has
     already been verified in the database.
     """
-    return False
+
+    with Session(engine) as session:
+        exist = session.select(VerifiedEmail).where(VerifiedEmail.id.match(id)).where(VerifiedEmail.verified_at.is_not(None)).first()
+        if exist:
+            return True
+        else:
+            return False
 
 @app.post("/verify")
 async def verify(email_address: Annotated[str, Form()], 
