@@ -107,6 +107,7 @@ async def verify(email_address: Annotated[str, Form()],
                                                       "email_address": email_address,
                                                       "validation_failed": True})
 
+
 @app.post("/create_otp/")
 async def generate_otp(request: OTPRequest):
     """
