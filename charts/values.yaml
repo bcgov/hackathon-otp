@@ -1,0 +1,122 @@
+# Default values for verify.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 2
+artifactoryServiceAccount: hackathon-otp-artifactory
+defaultImageTag: latest
+
+image:
+  api:
+    repository: ghcr.io/bcgov/hackathon-otp
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ~
+  schema:
+    repository: ghcr.io/bcgov/hackathon-otp-schema
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ~
+  psql:
+    repository: artifacts.developer.gov.bc.ca/google-docker-remote/ggl-cas-storage/cas-postgres
+    tag: "0.3.0"
+
+api:
+  port: 3000
+  probesPort: 9000
+db:
+  port: 5432
+
+# -- Specify docker-registry secret names as an array
+imagePullSecrets: []
+# -- String to partially override fullname
+nameOverride: ~
+# -- String to fully override fullname
+fullnameOverride: ~
+
+# DeploymentConfig pre-hook failure behavior
+failurePolicy: Retry
+
+# -- Annotations for verify pods
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+autoscaling:
+  # -- Specifies whether the Horizontal Pod Autoscaler should be created
+  enabled: false
+
+  # -- behavior configures the scaling behavior of the target in both Up and Down directions (scaleUp and scaleDown fields respectively).
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+      selectPolicy: Max
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      selectPolicy: Max
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+  minReplicas: 2
+  maxReplicas: 16
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  enabled: false
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ~
+
+networkPolicy:
+  # -- Specifies whether a network policy should be created
+  enabled: true
+
+service:
+  type: ClusterIP
+  port: 3000
+  portName: http
+
+route:
+  # -- Specifies whether a route should be created
+  enabled: false
+  # -- Annotations to add to the route
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  host: chart-example.local
+  # path: /
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  wildcardPolicy: None
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    cpu: 200m
+    memory: 512Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+

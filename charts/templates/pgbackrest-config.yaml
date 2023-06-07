@@ -1,0 +1,5 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "verify.fullname" . }}-pgbackrest
+  labels: {{ include "verify.labels" . | nindent 4 }}

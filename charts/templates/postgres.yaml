@@ -1,0 +1,115 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: {{ template "verify.fullname" . }}-postgres
+  labels: {{ include "verify.labels" . | nindent 4 }}
+spec:
+  image: artifacts.developer.gov.bc.ca/bcgov-docker-local/crunchy-postgres:ubi8-14.7-0
+  metadata:
+    labels: {{ include "verify.labels" . | nindent 6 }}
+  postgresVersion: 14
+  instances:
+    - name: pgha1
+      replicas: 1
+      dataVolumeClaimSpec:
+        accessModes:
+        - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: 1Gi
+            cpu: 15m
+            memory: 128Mi
+          limits:
+            cpu: 100m
+            memory: 256Mi
+        storageClassName: netapp-block-standard
+      sidecars:
+        replicaCertCopy:
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  postgres-operator.crunchydata.com/cluster: {{ template "verify.fullname" . }}-postgres
+                  postgres-operator.crunchydata.com/instance-set: pgha1
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        pg_hba:
+          - "host all all 0.0.0.0/0 trust" # this line enables logical replication with programmatic access
+          - "host all postgres 127.0.0.1/32 md5"
+  proxy:
+    pgBouncer:
+      image: artifacts.developer.gov.bc.ca/bcgov-docker-local/crunchy-pgbouncer:ubi8-1.18-0
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+      config:
+        global:
+          client_tls_sslmode: disable
+      replicas: 1
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  postgres-operator.crunchydata.com/cluster: {{ template "verify.fullname" . }}-postgres
+                  postgres-operator.crunchydata.com/role: pgbouncer
+  users:
+    - name: postgres
+      databases:
+        - everify
+  backups:
+    pgbackrest:
+      image: artifacts.developer.gov.bc.ca/bcgov-docker-local/crunchy-pgbackrest:ubi8-2.41-4
+      repoHost:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 25m
+            memory: 64Mi
+      global:
+        repo1-retention-full: "90"
+        repo1-retention-full-type: time
+      configuration:
+        - configMap:
+            name: {{ template "verify.fullname" . }}-pgbackrest
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              accessModes:
+              - "ReadWriteMany"
+              resources:
+                requests:
+                  storage: 50Mi
+                  cpu: 15m
+                  memory: 100Mi
+                limits:
+                  cpu: 100m
+                  memory: 100Mi
+
+          schedules:
+            full: "0 1 1 1 *"
+            # run incremental backup every 4 hours, except at 8am UTC (when the full backup is running)
+            incremental: "0 1 1 1 *"
+
