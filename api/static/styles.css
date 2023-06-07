@@ -1,0 +1,20 @@
+body{
+  margin: 0;
+  font-family: 'BCSans', 'Noto Sans', Verdana, Arial, sans-serif;
+}
+
+.bcgov-header {
+  height: 5em;
+  background-color: #003366;
+  border-bottom: 4px solid #FCBA19;
+}
+
+.bcgov-btn {
+  background-color: #003366;
+  color: white;
+}
+.bcgov-btn:hover {
+  /* !important is needed to override w3.css */
+  background-color: #1A5A96 !important;
+  color: white !important;
+}
