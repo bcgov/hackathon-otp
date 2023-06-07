@@ -1,9 +1,11 @@
-from typing import Annotated
-from fastapi import FastAPI, Request, Form
+from dotenv import load_dotenv
+load_dotenv()
+
+from typing import Annotated, Optional
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import math, random, json
 import urllib.parse
@@ -11,10 +13,8 @@ import math, random
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from db import OneTimePassword, VerifiedEmail, get_email_id
-
 import emailService 
-from typing import Annotated, Optional
-import urllib.parse
+
 
 description = """
 
@@ -106,6 +106,7 @@ async def verify(email_address: Annotated[str, Form()],
         return templates.TemplateResponse("verify.html", {"request": {}, 
                                                       "email_address": email_address,
                                                       "validation_failed": True})
+
 
 @app.post("/create_otp/")
 async def generate_otp(request: OTPRequest):

@@ -2,3 +2,5 @@
 .scratch
 .venv
 **/__pycache__
+
+**/.env

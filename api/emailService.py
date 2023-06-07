@@ -1,6 +1,6 @@
 import requests
 import json
-
+import os
 from config import Config
 
 
@@ -41,13 +41,23 @@ class EmailService():
                    otp
                    ):
         '''Sends an email.'''
+        body = '<h1>Here is your one-time code:</h1><div><h1>' + otp + '</h1></div>'
 
+        if(os.environ['SEND_EMAILS_TO_CONSOLE'] == 'True'):
+            print('------------------------------------')
+            print(f'---- TO: ${recipient}')
+            print(f'---- FROM: ${Config.SENDER_EMAIL}')
+            print('------------------------------------')
+            print('Email body:')
+            print(body)
+
+            return
         # get auth token
         auth_token = EmailService.get_auth_token()
 
         headers = {'Authorization': f'Bearer {auth_token}', 'Content-Type': 'application/json'}
 
-        body = '<h1>Here is your one-time code:</h1><div><h1>' + otp + '</h1></div>'
+        
 
         data = {
             'subject': 'Verify Your Email',
@@ -61,6 +71,8 @@ class EmailService():
         }
 
         url = f'{Config.CHES_HOST}/email'
+
+
         # call CHES api
         resp = requests.post(url, json.dumps(data), headers=headers)
         try:
