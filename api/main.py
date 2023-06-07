@@ -23,6 +23,7 @@ app = FastAPI(
     description=description,
     version="0.0.1"
 )
+app.mount("/static", StaticFiles(directory))
 
 engine = create_engine('postgresql://awilliam@localhost:5432/email_verification')
 

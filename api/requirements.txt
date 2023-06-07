@@ -3,3 +3,4 @@ pydantic
 uvicorn[standard]
 sqlalchemy
 psycopg2
+jinja2
