@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import math, random
+import json
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
@@ -103,6 +104,7 @@ async def generate_otp(request: OTPRequest):
         #TODO check if email and authprovider already match
         exist = session.query(VerifiedEmail).filter(
             VerifiedEmail.email_address == request.email_address, VerifiedEmail.auth_provider_uuid == request.auth_provider_uuid).first()
+        print(exist.id, exist.email_address)
         if exist:
             raise HTTPException(
                 status_code=400, detail="email already exists")
