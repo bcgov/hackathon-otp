@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import math, random
 import json
@@ -23,7 +26,9 @@ app = FastAPI(
     description=description,
     version="0.0.1"
 )
-app.mount("/static", StaticFiles(directory))
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 engine = create_engine('postgresql://awilliam@localhost:5432/email_verification')
 
@@ -72,6 +77,9 @@ async def get_email_id(email_address: str, auth_provider: str):
         results = session.select(VerifiedEmail).where(VerifiedEmail.email_address.match(email_address)).where(VerifiedEmail.auth_provider_uuid.match(auth_provider)).all()
 
 
+@app.get("/verify_page", response_class=HTMLResponse)
+async def verify_page(request: Request):
+    return templates.TemplateResponse("verify.html", {"request": request, "test": "this is a test"})
 
 @app.get("/is_verified")
 async def check_verification(id: int):
