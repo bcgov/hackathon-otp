@@ -40,6 +40,9 @@ engine = create_engine('postgresql://awilliam@localhost:5432/email_verification'
 
 class VerifyRequest(BaseModel):
     email_address: str
+
+class RequestToVerify(BaseModel):
+    email_id: Optional[int]
     one_time_password: str
     redirect_url: str
 
