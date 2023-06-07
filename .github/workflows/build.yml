@@ -2,9 +2,9 @@ name: hackathon OTP
 
 on:
   push:
-    branches: [main, feat/docker-for-schema]
+    branches: [main]
   pull_request:
-    branches: [main, feat/docker-for-schema]
+    branches: [main]
 
 
 jobs:
