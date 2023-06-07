@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import math, random
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.orm import Session, mapped_column
+from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
 
 description = """
@@ -21,7 +21,7 @@ app = FastAPI(
     version="0.0.1"
 )
 
-engine = create_engine('postgresql://jolarouc@localhost:5432/email_verification')
+engine = create_engine('postgresql://awilliam@localhost:5432/email_verification')
 
 Base = declarative_base()
 
@@ -107,7 +107,8 @@ async def generate_otp(request: OTPRequest):
             raise HTTPException(
                 status_code=400, detail="email already exists")
 
-        request.id = session.add(request).returning(VerifiedEmail.id)
+        y = VerifiedEmail(auth_provider_uuid = request.auth_provider_uuid, email_address = request.email_address)
+        session.add(y)
 
         session.commit()
         session.refresh(request)
