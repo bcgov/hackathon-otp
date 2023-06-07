@@ -5,9 +5,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import math, random, json
+import math, random
 import urllib.parse
 import math, random
+import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from db import OneTimePassword, VerifiedEmail, get_email_id
@@ -86,26 +87,52 @@ async def check_verification(id: int):
 @app.post("/verify")
 async def verify(email_address: Annotated[str, Form()], 
                  one_time_password: Annotated[str, Form()], 
-                 redirect_url: Annotated[str, Form()]):
+                 redirect_url: Annotated[str, Form()],
+                 auth_provider_uuid: Annotated[str, Form()]):
     print(email_address)
     print(one_time_password)
     print(redirect_url)
+    print(auth_provider_uuid)
     """
     Verify an email address given the OTP and ID of the record
     """
     with Session(engine) as session:
-        email_id = get_email_id(email_address, auth_provider='1', session=session)
+        email_id = await get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
+
+        print('email_id: {}'.format(email_id))
         
-        session.query(VerifiedEmail)\
-            .where()
+        password_results = session.query(OneTimePassword)\
+            .where(OneTimePassword.otp == one_time_password)\
+            .where(OneTimePassword.email_id == email_id)\
+            .all()
 
-        # If validation succeeds
-        return RedirectResponse(urllib.parse.unquote(redirect_url))
+        print('password_results: {}'.format(password_results))
 
-        # If validation fails
-        return templates.TemplateResponse("verify.html", {"request": {}, 
+        # TODO: also want logic for checking expiry of OTP
+
+        # TODO: will want to check whether email has already been verified instead of verifying again
+
+        if password_results is not None:
+            verified_email_record = session.query(VerifiedEmail)\
+                .where(VerifiedEmail.id == email_id).first()
+            print('verified_email_record: {}'.format(verified_email_record))
+            verified_email_record.verified_at = datetime.datetime.now()
+            
+            session.add(verified_email_record)
+            session.commit()
+
+            # validation succeeded
+            return RedirectResponse(urllib.parse.unquote(redirect_url))
+
+        else:
+            # validation failed
+            return templates.TemplateResponse("verify.html", {"request": {}, 
                                                       "email_address": email_address,
                                                       "validation_failed": True})
+
+
+
+
 
 @app.post("/create_otp/")
 async def generate_otp(request: OTPRequest):
