@@ -21,7 +21,7 @@ jobs:
             context: schema
             dockerfile: schema/Dockerfile
             name: schema
-    name: Build ${{ matrix.name }}
+    name: Build ${{ matrix.name }} docker image
     steps:
       - uses: actions/checkout@v3
       - name: Set up Docker Buildx
