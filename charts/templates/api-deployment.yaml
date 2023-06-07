@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "verify.fullname" . }}
+  labels:
+    component: app
+{{ include "verify.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    name: {{ template "verify.fullname" . }}
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      component: app
+{{ include "verify.selectorLabels" . | indent 6 }}
+  template:
+    metadata:
+      labels:
+        component: app
+{{ include "verify.labels" . | indent 8 }}
+    spec:
+      imagePullSecrets: {{ include "verify.imagePullSecrets" . | nindent 8 }}
+      containers:
+        - name: {{ template "verify.fullname" . }}
+          imagePullPolicy: {{ default .Values.defaultImagePullPolicy .Values.image.api.pullPolicy }}
+          image: {{ .Values.image.api.repository }}:{{ default .Values.defaultImageTag .Values.image.api.tag }}
+          env: {{ include "verify.dbUserPgEnv" . | nindent 12 }}
+            - name: PORT
+              value: {{ .Values.api.port | quote }}
+            - name: HOST
+              value: https://{{ .Values.hostName }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+
+
+
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 9000
+            # we want the readiness threshold to fail fast,
+            # to prevent any request from going to a pod that is not ready
+            failureThreshold: 1
+            successThreshold: 1
+            periodSeconds: 5
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+          livenessProbe:
+            # the liveness probe is here to ensure that a pod does not get
+            # stuck in a shutdown state. It needs to allow enough time for
+            # the registered shutdown handler to run to completion.
+            httpGet:
+              path: /live
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      restartPolicy: Always
