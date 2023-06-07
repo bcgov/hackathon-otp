@@ -31,5 +31,11 @@ async def get_email_id(email_address: str, auth_provider: str, session: Session)
     Returns the ID (primary key) from verified_email table that matches 
     the given email_address and auth_provider
     """
-    results = session.select(VerifiedEmail).where(VerifiedEmail.email_address.match(email_address)).where(VerifiedEmail.auth_provider_uuid.match(auth_provider)).first()
-    return results.id
+    results = session.query(VerifiedEmail)\
+        .where(VerifiedEmail.email_address.match(email_address))\
+            .where(VerifiedEmail.auth_provider_uuid.match(auth_provider))\
+                .first()
+    if results:
+        return results.id
+    else:
+        return None
