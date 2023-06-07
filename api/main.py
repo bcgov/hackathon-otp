@@ -8,12 +8,12 @@ from pydantic import BaseModel
 import math, random, json
 import urllib.parse
 import math, random
-import json
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
-
 import emailService 
+from typing import Annotated
+import urllib.parse
 
 description = """
 
@@ -65,6 +65,7 @@ class VerifyRequest(BaseModel):
 class RequestToVerify(BaseModel):
     email_id: int
     one_time_password: str
+    redirect_url: str
 
 class OTPRequest(BaseModel):
     email_address: str
