@@ -1,4 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import math, random
 
@@ -17,7 +20,9 @@ app = FastAPI(
     description=description,
     version="0.0.1"
 )
-app.mount("/static", StaticFiles(directory))
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 class VerifyRequest(BaseModel):
     email_address: str
@@ -26,6 +31,10 @@ class VerifyRequest(BaseModel):
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+@app.get("/verify_page", response_class=HTMLResponse)
+async def verify_page(request: Request):
+    return templates.TemplateResponse("verify.html", {"request": request, "test": "this is a test"})
 
 @app.get("/is_verified")
 async def check_verification():
