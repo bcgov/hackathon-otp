@@ -4,13 +4,58 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <link rel="icon" href="/static/favicon.ico" />
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" />
+    <link rel="stylesheet" type="text/css" href="/static/styles.css" />
     <title>BCGov One-Time Password</title>
   </head>
   <body>
-    <header style="background: #003366">
-      <img src="static/bcgov_logo.svg" />
+    <header class="bcgov-header">
+      <img src="static/bcgov_logo.svg" style="height: 4em; margin-top: 0.5em" />
     </header>
-    <p>TEST</p>
-    <p>{{ test }}</p>
+    <div class="w3-half w3-display-middle">
+      <div class="w3-card-4 w3-container">
+        <div style="margin: 50px">
+          {% if validation_failed %}
+          <div class="w3-row w3-section">OTP Validation failed!</div>
+          {% else %}
+          <form method="post" action="/verify">
+            <div class="w3-row w3-section">
+              <p>
+                A one-time password was sent to the email
+                <strong>{{ email_address }}</strong> that was provided. Please
+                enter it here to complete the registration process.
+              </p>
+              <input
+                id="otp-input"
+                name="one_time_password"
+                class="w3-input"
+                type="text"
+                placeholder="Enter your one-time password here"
+              />
+              <input
+                name="email_address"
+                type="hidden"
+                value="{{ email_address }}"
+              />
+              <input
+                name="redirect_url"
+                type="hidden"
+                value="{{ redirect_url }}"
+              />
+            </div>
+            <div class="w3-row w3-section">
+              <div class="w3-col">
+                <input
+                  class="w3-button bcgov-btn w3-right"
+                  type="submit"
+                  value="Submit"
+                />
+              </div>
+            </div>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

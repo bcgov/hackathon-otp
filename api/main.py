@@ -1,15 +1,15 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import math, random
-import json
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
-
 import emailService 
+from typing import Annotated
+import urllib.parse
 
 description = """
 
@@ -59,6 +59,7 @@ class VerifyRequest(BaseModel):
 class RequestToVerify(BaseModel):
     email_id: int
     one_time_password: str
+    redirect_url: str
 
 class OTPRequest(BaseModel):
     email_address: str
@@ -78,8 +79,13 @@ async def get_email_id(email_address: str, auth_provider: str):
 
 
 @app.get("/verify_page", response_class=HTMLResponse)
-async def verify_page(request: Request):
-    return templates.TemplateResponse("verify.html", {"request": request, "test": "this is a test"})
+async def verify_page(request: Request, email_address: str = "missing", redirect_url="test redirect"):
+    return templates.TemplateResponse("verify.html", 
+                                      {"request": request, 
+                                       "email_address": email_address, 
+                                       "redirect_url": urllib.parse.quote(email_address)
+                                       "validation_failed": False})
+   
 
 @app.get("/is_verified")
 async def check_verification(id: int):
@@ -94,14 +100,25 @@ async def check_verification(id: int):
         else:
             return False
 
-@app.post("/verify/")
-async def verify(request: RequestToVerify):
+@app.post("/verify")
+async def verify(email_address: Annotated[str, Form()], 
+                 one_time_password: Annotated[str, Form()], 
+                 redirect_url: Annotated[str, Form()]):
+    print(email_address)
+    print(one_time_password)
+    print(redirect_url)
+
+    # If validation succeeds
+    return RedirectResponse(urllib.parse.unquote(redirect_url))
+ 
+    # If validation fails
+    return templates.TemplateResponse("verify.html", {"request": {}, 
+                                                      "email_address": email_address,
+                                                      "validation_failed": True})
     """
     Verify an email address given the OTP and ID of the record
     """
  
-    return request
-
 @app.post("/create_otp/")
 async def generate_otp(request: OTPRequest):
     """
