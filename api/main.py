@@ -145,6 +145,7 @@ async def generate_otp(request: OTPRequest):
         #TODO check if email and authprovider already match
         exist = session.query(VerifiedEmail).filter(
             VerifiedEmail.email_address == request.email_address, VerifiedEmail.auth_provider_uuid == request.auth_provider_uuid).first()
+        print(exist.id, exist.email_address)
         if exist:
             print(exist.id, exist.email_address)
             raise HTTPException(
