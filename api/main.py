@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import math, random, json
 import urllib.parse
@@ -30,20 +31,23 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-engine = create_engine('')
+engine = create_engine('postgresql://jolarouc@localhost:5432/email_verification')
 
 Base = declarative_base()
 
 class OneTimePassword(Base):
     __tablename__ = 'otp'
+    __table_args__ = {'schema': 'everify'}
 
     id = Column(Integer, primary_key=True)
     otp = Column(String)
     created_at = Column(DateTime)
-    email_id = mapped_column(ForeignKey("verified_email.id"))
+    email_id = Column(Integer)
+    #email_id = mapped_column(ForeignKey("verified_email.id"))
 
 class VerifiedEmail(Base):
     __tablename__ = 'verified_email'
+    __table_args__ = {'schema': 'everify'}
 
     id = Column(Integer, primary_key = True)
     auth_provider_uuid = Column(Integer)
@@ -58,6 +62,10 @@ class VerifyRequest(BaseModel):
 class RequestToVerify(BaseModel):
     email_id: int
     one_time_password: str
+
+class OTPRequest(BaseModel):
+    email_address: str
+    auth_provider_uuid: str
 
 @app.get("/")
 async def root():
@@ -110,3 +118,40 @@ async def verify(email_address: Annotated[str, Form()],
     return templates.TemplateResponse("verify.html", {"request": {}, 
                                                       "email_address": email_address,
                                                       "validation_failed": True})
+    return request
+
+@app.post("/create_otp/")
+async def generate_otp(request: OTPRequest):
+    """
+    Generate a one time passcode given the email address and auth provider
+    """
+
+    digits = "0123456789"
+    password = ""
+ 
+    #length of password can be changed by changing value in range
+    for i in range(4) :
+        password += digits[math.floor(random.random() * 10)]
+
+    with Session(engine) as session:
+
+        #TODO check if email and authprovider already match
+        exist = session.query(VerifiedEmail).filter(
+            VerifiedEmail.email_address == request.email_address, VerifiedEmail.auth_provider_uuid == request.auth_provider_uuid).first()
+        if exist:
+            raise HTTPException(
+                status_code=400, detail="email already exists")
+
+        request.id = session.add(request).returning(VerifiedEmail.id)
+
+        session.commit()
+        session.refresh(request)
+
+        x = OneTimePassword(email_id = request.id, otp = password)
+
+        session.add(x)
+        session.commit()
+
+        send_email(request.email_address, password)
+
+    return request
