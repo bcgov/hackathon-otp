@@ -17,6 +17,7 @@ app = FastAPI(
     description=description,
     version="0.0.1"
 )
+app.mount("/static", StaticFiles(directory))
 
 class VerifyRequest(BaseModel):
     email_address: str
