@@ -6,6 +6,8 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
 
+import emailService 
+
 description = """
 
 Email verification system for Basic BCeID accounts
@@ -47,7 +49,6 @@ class VerifiedEmail(Base):
 
 class VerifyRequest(BaseModel):
     email_address: str
-    one_time_password: str
 
 class RequestToVerify(BaseModel):
     email_id: int
@@ -126,6 +127,8 @@ async def generate_otp(request: OTPRequest):
         session.add(x)
         session.commit()
 
-        send_email(request.email_address, password)
+        # send otp to user
+        email = emailService.EmailService()
+        emailResponse = email.send_email(request.email_address, password)
 
     return request
