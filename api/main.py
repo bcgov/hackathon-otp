@@ -6,6 +6,10 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import math, random, json
 import urllib.parse
+import math, random
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.orm import Session, mapped_column
+from sqlalchemy.ext.declarative import declarative_base
 
 description = """
 
@@ -26,10 +30,34 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
+engine = create_engine('')
+
+Base = declarative_base()
+
+class OneTimePassword(Base):
+    __tablename__ = 'otp'
+
+    id = Column(Integer, primary_key=True)
+    otp = Column(String)
+    created_at = Column(DateTime)
+    email_id = mapped_column(ForeignKey("verified_email.id"))
+
+class VerifiedEmail(Base):
+    __tablename__ = 'verified_email'
+
+    id = Column(Integer, primary_key = True)
+    auth_provider_uuid = Column(Integer)
+    email_address = Column(String)
+    verified_at = Column(DateTime)
+
 class VerifyRequest(BaseModel):
     email_address: str
     one_time_password: str
     redirect_url: str
+
+class RequestToVerify(BaseModel):
+    email_id: int
+    one_time_password: str
 
 @app.get("/")
 async def root():
@@ -59,7 +87,7 @@ async def verify(email_address: Annotated[str, Form()],
     print(one_time_password)
     print(redirect_url)
     """
-    Verify an email address given the email address and OTP
+    Verify an email address given the OTP and ID of the record
     """
     
 
