@@ -2,14 +2,25 @@ name: hackathon OTP
 
 on:
   push:
-    branches: [main, feat/build_pipeline]
+    branches: [main, feat/docker-for-schema]
   pull_request:
-    branches: [main, feat/build_pipeline]
+    branches: [main, feat/docker-for-schema]
 
 
 jobs:
   docker-build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - image: ghcr.io/bcgov/hackathon-otp
+            context: api
+            dockerfile: api/Dockerfile
+            name: api
+          - image: ghcr.io/bcgov/hackathon-otp-schema
+            context: schema
+            dockerfile: schema/Dockerfile
+            name: schema
     steps:
       - uses: actions/checkout@v3
       - name: Set up Docker Buildx
@@ -19,7 +30,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ghcr.io/bcgov/hackathon-otp
+          images: ${{ matrix.image }}
           tags: |
             type=sha,format=long,prefix=
             latest
@@ -32,10 +43,10 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v4
         with:
-          context: api
+          context: ${{ matrix.context }}
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          file: api/Dockerfile
+          file: ${{ matrix.dockerfile }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
         
