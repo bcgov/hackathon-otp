@@ -1,14 +1,15 @@
 from fastapi import FastAPI, HTTPException, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import math, random
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.declarative import declarative_base
+from api.db import OneTimePassword, VerifiedEmail, get_email_id
+
 import emailService 
-from typing import Annotated
+from typing import Annotated, Optional
 import urllib.parse
 
 description = """
@@ -32,26 +33,6 @@ templates = Jinja2Templates(directory="templates")
 
 engine = create_engine('postgresql://awilliam@localhost:5432/email_verification')
 
-Base = declarative_base()
-
-class OneTimePassword(Base):
-    __tablename__ = 'otp'
-    __table_args__ = {'schema': 'everify'}
-
-    id = Column(Integer, primary_key=True)
-    otp = Column(String)
-    created_at = Mapped[Optional[DateTime]]
-    email_id = Column(Integer)
-    #email_id = mapped_column(ForeignKey("verified_email.id"))
-
-class VerifiedEmail(Base):
-    __tablename__ = 'verified_email'
-    __table_args__ = {'schema': 'everify'}
-
-    id = Column(Integer, primary_key = True)
-    auth_provider_uuid = Column(Integer)
-    email_address = Column(String)
-    verified_at = Column(DateTime)
 
 class VerifyRequest(BaseModel):
     email_address: str
@@ -71,13 +52,6 @@ class OTPRequest(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
-async def get_email_id(email_address: str, auth_provider: str, session: Session):
-    """
-    Returns the ID (primary key) from verified_email table that matches 
-    the given email_address and auth_provider
-    """
-    results = session.select(VerifiedEmail).where(VerifiedEmail.email_address.match(email_address)).where(VerifiedEmail.auth_provider_uuid.match(auth_provider)).first()
-    return results.id
 
 @app.get("/verify_page", response_class=HTMLResponse)
 async def verify_page(request: Request, email_address: str = "missing", redirect_url="test redirect"):
@@ -124,6 +98,7 @@ async def verify(email_address: Annotated[str, Form()],
         return templates.TemplateResponse("verify.html", {"request": {}, 
                                                       "email_address": email_address,
                                                       "validation_failed": True})
+
 @app.post("/create_otp/")
 async def generate_otp(request: OTPRequest):
     """
@@ -134,7 +109,7 @@ async def generate_otp(request: OTPRequest):
     password = ""
  
     #length of password can be changed by changing value in range
-    for i in range(4) :
+    for _ in range(4) :
         password += digits[math.floor(random.random() * 10)]
 
     with Session(engine) as session:
@@ -166,4 +141,4 @@ async def generate_otp(request: OTPRequest):
         email = emailService.EmailService()
         emailResponse = email.send_email(request.email_address, password)
 
-    return request
+    return emailResponse
