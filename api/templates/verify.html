@@ -3,9 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <link rel="icon" href="/static/favicon.ico" />
+    <link rel="icon" href="{{ route_prefix }}/static/favicon.ico" />
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" />
-    <link rel="stylesheet" type="text/css" href="/static/styles.css" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ route_prefix }}/static/styles.css"
+    />
     <title>BCGov One-Time Password</title>
   </head>
   <body>
@@ -18,7 +22,7 @@
           {% if validation_failed %}
           <div class="w3-row w3-section">OTP Validation failed!</div>
           {% else %}
-          <form method="post" action="/verify">
+          <form method="post" action="{{ route_prefix }}/verify">
             <div class="w3-row w3-section">
               <p>
                 A one-time password was sent to the email
@@ -37,7 +41,7 @@
                 type="hidden"
                 value="{{ email_address }}"
               />
-              <input 
+              <input
                 name="auth_provider_uuid"
                 type="hidden"
                 value="{{ auth_provider_uuid }}"

@@ -81,10 +81,11 @@ async def root():
 
 @app.get("/verify_page", response_class=HTMLResponse)
 async def verify_page(request: Request, email_address: str = "missing", redirect_url="test redirect"):
-    return templates.TemplateResponse("verify.html",
-                                      {"request": request,
+    return templates.TemplateResponse("verify.html", 
+                                      {"request": request, 
                                        "email_address": email_address,
-                                       "redirect_url": urllib.parse.quote(email_address),
+                                       "redirect_url": redirect_url,
+                                       "route_prefix": "",
                                        "validation_failed": False})
 
 
