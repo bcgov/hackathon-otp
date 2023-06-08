@@ -11,7 +11,7 @@ import math, random
 import urllib.parse
 import math, random
 import datetime
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from db import OneTimePassword, VerifiedEmail, get_email_id
 import emailService
@@ -20,11 +20,12 @@ import os
 
 description = """
 
-Email verification system for Basic BCeID accounts
+Email verification system for any type of user account
 
 You can:
-* **Create a OTP for an email address** (_not implemented_)
-* **Check whether an email address has already been verified** (_not implemented_)
+* **Create a OTP for an email address**
+* **Verify an account (based on auth_provider_uuid and email_address) with OTP**
+* **Check whether an email address has already been verified**
 
 """
 
@@ -44,20 +45,6 @@ PGPORT = int(os.getenv('PGPORT'))
 CONNECTION_STRING= f'postgresql://{PGUSER}:{PGPASS}@{PGHOST}/everify'
 engine = create_engine(CONNECTION_STRING)
 
-
-class VerifyRequest(BaseModel):
-    email_address: str
-
-class RequestToVerify(BaseModel):
-    email_id: Optional[int]
-    one_time_password: str
-    redirect_url: str
-
-class RequestToVerify(BaseModel):
-    email_id: Optional[int]
-    one_time_password: str
-    email_address: str
-    auth_provider_uuid: str
 
 class OTPRequest(BaseModel):
     email_address: str
