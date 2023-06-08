@@ -9,12 +9,12 @@ defaultImageTag: latest
 image:
   api:
     repository: ghcr.io/bcgov/hackathon-otp
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
     tag: ~
   schema:
     repository: ghcr.io/bcgov/hackathon-otp-schema
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
     tag: ~
   psql:
