@@ -14,7 +14,7 @@ import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from db import OneTimePassword, VerifiedEmail, get_email_id
-import emailService 
+import emailService
 
 
 description = """
@@ -62,18 +62,29 @@ class OTPRequest(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
+@app.get("/ready")
+def kubernetes_readiness_probe():
+    return {"status": "healthy"}
+
+@app.get("/live")
+def kubernetes_readiness_probe():
+    return {"status": "alive"}
+
+async def root():
+    return {"message": "Hello World"}
+
 @app.get("/verify_page", response_class=HTMLResponse)
 async def verify_page(request: Request, email_address: str = "missing", redirect_url="test redirect"):
-    return templates.TemplateResponse("verify.html", 
-                                      {"request": request, 
-                                       "email_address": email_address, 
+    return templates.TemplateResponse("verify.html",
+                                      {"request": request,
+                                       "email_address": email_address,
                                        "redirect_url": urllib.parse.quote(email_address),
                                        "validation_failed": False})
-   
+
 
 @app.get("/is_verified")
 async def check_verification(email_address: str, auth_provider_uuid: str):
-    """ 
+    """
     @param email_address: string
     @param auth_provider_uuid: string identifier of account given by the auth provider (in OAuth token)
 
@@ -100,8 +111,8 @@ async def check_verification(email_address: str, auth_provider_uuid: str):
             return False
 
 @app.post("/verify")
-async def verify(email_address: Annotated[str, Form()], 
-                 one_time_password: Annotated[str, Form()], 
+async def verify(email_address: Annotated[str, Form()],
+                 one_time_password: Annotated[str, Form()],
                  redirect_url: Annotated[str, Form()],
                  auth_provider_uuid: Annotated[str, Form()]):
     print(email_address)
@@ -115,7 +126,7 @@ async def verify(email_address: Annotated[str, Form()],
         email_id = await get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
 
         print('email_id: {}'.format(email_id))
-        
+
         password_results = session.query(OneTimePassword)\
             .where(OneTimePassword.otp == one_time_password)\
             .where(OneTimePassword.email_id == email_id)\
@@ -132,7 +143,7 @@ async def verify(email_address: Annotated[str, Form()],
                 .where(VerifiedEmail.id == email_id).first()
             print('verified_email_record: {}'.format(verified_email_record))
             verified_email_record.verified_at = datetime.datetime.now()
-            
+
             session.add(verified_email_record)
             session.commit()
 
@@ -141,7 +152,7 @@ async def verify(email_address: Annotated[str, Form()],
 
         else:
             # validation failed
-            return templates.TemplateResponse("verify.html", {"request": {}, 
+            return templates.TemplateResponse("verify.html", {"request": {},
                                                       "email_address": email_address,
                                                       "validation_failed": True})
 
@@ -154,7 +165,7 @@ async def generate_otp(request: OTPRequest):
 
     digits = "0123456789"
     password = ""
- 
+
     #length of password can be changed by changing value in range
     for _ in range(4) :
         password += digits[math.floor(random.random() * 10)]
@@ -170,7 +181,7 @@ async def generate_otp(request: OTPRequest):
                 status_code=400, detail="email already exists")
         else:
             print('Creating new VerifiedEmail record...')
-            
+
         y = VerifiedEmail(auth_provider_uuid = request.auth_provider_uuid, email_address = request.email_address)
         session.add(y)
 
