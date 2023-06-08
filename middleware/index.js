@@ -2,9 +2,11 @@ const express = require("express");
 const request = require("request");
 
 const defaultConfig = {
-  everifyHost: "localhost:8000",
+  everifyHost: "http://localhost:8000",
   routePrefix: "/everify",
 };
+
+const host = process.env.HOST || "http://localhost:3004";
 
 function getMiddleware(configuration) {
   const config = configuration || defaultConfig;
@@ -15,6 +17,10 @@ function getMiddleware(configuration) {
   // Handle submit form endpoint with OTP
   internalRouter.post("/verify", (req, res, next) => {
     console.log("Verify!");
+  });
+
+  internalRouter.get("/verify_page", (req, res, next) => {
+    return "a";
   });
 
   // Handle static assets for verify page
@@ -29,14 +35,11 @@ function getMiddleware(configuration) {
   router.use(config.routePrefix, internalRouter);
 
   router.use(async (req, res, next) => {
-    if (!req.claims) next();
+    if (!req.claims) return next();
 
     const isVerifiedUrl = new URL(`${config.everifyHost}/is_verified`);
-    isVerifiedUrl.searchParams.append(
-      "email_address",
-      req.claims.email_address
-    );
-    isVerifiedUrl.searchParams.append("auth_provider_uuid", req.claims.uuid);
+    isVerifiedUrl.searchParams.append("email_address", req.claims.email);
+    isVerifiedUrl.searchParams.append("auth_provider_uuid", req.claims.sub);
 
     const isVerifiedResponse = await fetch(isVerifiedUrl);
 
@@ -51,25 +54,26 @@ function getMiddleware(configuration) {
     const sendEmailUrl = new URL(`${config.everifyHost}/create_otp`);
     const sendEmailResponse = await fetch(sendEmailUrl, {
       method: "POST",
-      body: {
-        email_address: req.claims.email_address,
-        auth_provider_uuid: req.claims.uuid,
-      },
+      body: JSON.stringify({
+        email_address: req.claims.email,
+        auth_provider_uuid: req.claims.sub,
+      }),
+      headers: { "Content-Type": "application/json" },
     });
     if (!sendEmailResponse.ok)
-      throw new Error("error calling send email endpoint");
+      throw new Error(
+        "error calling send email endpoint " + sendEmailResponse.error
+      );
 
     // Show the user the OTP page
-    const verifyPageUrl = new URL(`${config.everifyHost}/is_verified`);
-    verifyPageUrl.searchParams.append("route_prefix", config.route_prefix);
-    verifyPageUrl.searchParams.append(
-      "email_address",
-      req.claims.email_address
-    );
-    verifyPageUrl.searchParams.append("auth_provider_uuid", req.claims.uuid);
+    const verifyPageUrl = new URL(`${config.everifyHost}/verify_page`);
+    verifyPageUrl.searchParams.append("route_prefix", config.routePrefix);
+    verifyPageUrl.searchParams.append("email_address", req.claims.email);
+    verifyPageUrl.searchParams.append("auth_provider_uuid", req.claims.sub);
 
+    //const verifyPageResponse = await fetch(verifyPageUrl);
     request({
-      url: verifyPageUrl,
+      uri: verifyPageUrl,
     }).pipe(res);
   });
 
@@ -79,4 +83,4 @@ function getMiddleware(configuration) {
 module.exports = { getMiddleware, defaultConfig };
 
 /// consumer would do
-// app.use(package.getMiddleware( {..optional config..} ))
+// app.use('/everify', getMiddleware())

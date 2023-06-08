@@ -67,13 +67,13 @@ async def root():
     return {"message": "Hello World"}
 
 @app.get("/verify_page", response_class=HTMLResponse)
-async def verify_page(request: Request, email_address: str = "missing", auth_provider_uuid: str = "", redirect_url="test redirect"):
+async def verify_page(request: Request, email_address: str = "missing",route_prefix: str = "", auth_provider_uuid: str = "", redirect_url="test redirect"):
     return templates.TemplateResponse("verify.html",
                                       {"request": request,
                                        "email_address": email_address,
                                        "redirect_url": redirect_url,
                                        "auth_provider_uuid": auth_provider_uuid,
-                                       "route_prefix": "",
+                                       "route_prefix": route_prefix,
                                        "validation_failed": False})
 
 
