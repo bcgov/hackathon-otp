@@ -42,7 +42,7 @@ PGHOST = os.getenv('PGHOST')
 PGUSER = os.getenv('PGUSER')
 PGPASS = os.getenv('PGPASSWORD')
 PGPORT = int(os.getenv('PGPORT'))
-CONNECTION_STRING= f'postgresql://{PGUSER}:{PGPASS}@{PGHOST}/everify'
+CONNECTION_STRING= 'postgresql://' + {PGUSER} + ':' + {PGPASS} + '@' + {PGHOST} + ':' + {PGPORT} + '/everify'
 engine = create_engine(CONNECTION_STRING)
 
 
