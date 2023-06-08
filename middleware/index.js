@@ -41,8 +41,11 @@ function getMiddleware(configuration) {
     const isVerifiedResponse = await fetch(isVerifiedUrl);
 
     if (isVerifiedResponse.ok) {
-      next();
+      return next();
     }
+
+    if (isVerifiedResponse.status !== 401)
+      throw new Error("error calling the is_verified endpoint");
 
     // Send email
     const sendEmailUrl = new URL(`${config.everifyHost}/create_otp`);
