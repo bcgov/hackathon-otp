@@ -67,11 +67,12 @@ async def root():
     return {"message": "Hello World"}
 
 @app.get("/verify_page", response_class=HTMLResponse)
-async def verify_page(request: Request, email_address: str = "missing", redirect_url="test redirect"):
+async def verify_page(request: Request, email_address: str = "missing", auth_provider_uuid: str = "", redirect_url="test redirect"):
     return templates.TemplateResponse("verify.html",
                                       {"request": request,
                                        "email_address": email_address,
                                        "redirect_url": redirect_url,
+                                       "auth_provider_uuid": auth_provider_uuid,
                                        "route_prefix": "",
                                        "validation_failed": False})
 
@@ -93,17 +94,18 @@ async def check_verification(email_address: str, auth_provider_uuid: str):
         email_id = get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
 
         print('email_id: {}'.format(email_id))
+        r = Response()
 
         if email_id is None:
-            return False
+            r.status_code = 401
+            return r
 
         exists = session.query(VerifiedEmail)\
             .filter(VerifiedEmail.id == email_id, VerifiedEmail.verified_at.isnot(None))\
             .first()
 
-        r = Response()
-
         r.status_code = 200 if exists else 401
+        return r
 
 
 @app.post("/verify")
@@ -170,7 +172,9 @@ async def generate_otp(request: OTPRequest):
 
         #TODO check if email and authprovider already match
         exist = session.query(VerifiedEmail).filter(
-            VerifiedEmail.email_address == request.email_address, VerifiedEmail.auth_provider_uuid == request.auth_provider_uuid).first()
+            VerifiedEmail.email_address.match(request.email_address), 
+            VerifiedEmail.auth_provider_uuid.match(request.auth_provider_uuid), 
+            VerifiedEmail.verified_at.isnot(None)).first()
         if exist:
             print(exist.id, exist.email_address)
             raise HTTPException(
