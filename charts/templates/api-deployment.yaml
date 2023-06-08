@@ -36,6 +36,16 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: CHES_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: ches-client-secret
+            - name: CHES_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: ches-client-secret
 
 
 
@@ -45,7 +55,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /ready
-              port: 9000
+              port: 3000
             # we want the readiness threshold to fail fast,
             # to prevent any request from going to a pod that is not ready
             failureThreshold: 1
@@ -59,7 +69,7 @@ spec:
             # the registered shutdown handler to run to completion.
             httpGet:
               path: /live
-              port: 9000
+              port: 3000
             initialDelaySeconds: 10
             periodSeconds: 10
             failureThreshold: 3
