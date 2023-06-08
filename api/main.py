@@ -3,7 +3,7 @@ load_dotenv()
 
 from typing import Annotated, Optional
 from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -11,7 +11,7 @@ import math, random
 import urllib.parse
 import math, random
 import datetime
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from db import OneTimePassword, VerifiedEmail, get_email_id
 import emailService
@@ -100,14 +100,19 @@ async def check_verification(email_address: str, auth_provider_uuid: str):
     Returns boolean value indicating whether provided email address has
     already been verified in the database.
     """
+    
+
     with Session(engine) as session:
         email_id = await get_email_id(email_address, auth_provider_uuid, session)
 
-        exist = session.select(VerifiedEmail).where(VerifiedEmail.id.match(email_id)).where(VerifiedEmail.verified_at.is_not(None)).first()
-        if exist:
-            return True
-        else:
-            return False
+        exist_statement = select(VerifiedEmail).where(VerifiedEmail.email_address.match(email_address)).where(VerifiedEmail.auth_provider_uuid.match(auth_provider_uuid)).where(VerifiedEmail.verified_at.is_not(None))
+        exist = session.scalars(exist_statement).first()
+
+        r = Response()
+
+        r.status_code = 200 if exist else 401
+
+        return r
 
 @app.post("/verify")
 async def verify(email_address: Annotated[str, Form()],
