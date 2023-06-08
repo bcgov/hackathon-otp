@@ -3,5 +3,7 @@ kind: ArtifactoryServiceAccount
 metadata:
   labels: {{ include "verify.labels" . | nindent 4 }}
   name: hackathon-otp-artifactory
+  annotations:
+    "helm.sh/hook": "pre-install"
 spec:
   descriptor: Artifactory service accounts to download artifacts from Artifactory
