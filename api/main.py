@@ -72,13 +72,20 @@ async def verify_page(request: Request, email_address: str = "missing", redirect
    
 
 @app.get("/is_verified")
-async def check_verification(id: int):
-    """ Returns boolean value indicating whether provided email address has
+async def check_verification(email_address: str, auth_provider_uuid: str):
+    """ 
+    @param email_address: string
+    @param auth_provider_uuid: string identifier of account given by the auth provider (in OAuth token)
+
+    Params are passed as query params in URL.
+
+    Returns boolean value indicating whether provided email address has
     already been verified in the database.
     """
-
     with Session(engine) as session:
-        exist = session.select(VerifiedEmail).where(VerifiedEmail.id.match(id)).where(VerifiedEmail.verified_at.is_not(None)).first()
+        email_id = await get_email_id(email_address, auth_provider_uuid, session)
+
+        exist = session.select(VerifiedEmail).where(VerifiedEmail.id.match(email_id)).where(VerifiedEmail.verified_at.is_not(None)).first()
         if exist:
             return True
         else:
