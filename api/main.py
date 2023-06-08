@@ -15,6 +15,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from db import OneTimePassword, VerifiedEmail, get_email_id
 import emailService
+import os
 
 
 description = """
@@ -36,7 +37,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-engine = create_engine('postgresql://awilliam@localhost:5432/email_verification')
+PGHOST = os.getenv('PGHOST')
+PGUSER = os.getenv('PGUSER')
+PGPASS = os.getenv('PGPASSWORD')
+PGPORT = os.getenv('PGPORT')
+CONNECTION_STRING= '{PGUSER}:{PGPASS}@{PGHOST}:{PGPORT}'
+engine = create_engine('postgresql://{CONNECTION_STRING}/everify')
 
 
 class VerifyRequest(BaseModel):
