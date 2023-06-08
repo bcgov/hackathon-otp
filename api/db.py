@@ -31,11 +31,14 @@ async def get_email_id(email_address: str, auth_provider: str, session: Session)
     Returns the ID (primary key) from verified_email table that matches 
     the given email_address and auth_provider
     """
+    print(email_address, auth_provider)
+    # filter conditions are joined by AND operator
     results = session.query(VerifiedEmail)\
-        .where(VerifiedEmail.email_address.match(email_address))\
-            .where(VerifiedEmail.auth_provider_uuid.match(auth_provider))\
-                .first()
+        .filter(VerifiedEmail.email_address.like(email_address), VerifiedEmail.auth_provider_uuid.like(auth_provider))\
+        .all()
+
+    print('results {}'.format(results))
     if results:
-        return results.id
+        return int(results.id)
     else:
         return None

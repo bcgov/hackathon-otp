@@ -83,10 +83,18 @@ async def check_verification(email_address: str, auth_provider_uuid: str):
     already been verified in the database.
     """
     with Session(engine) as session:
-        email_id = await get_email_id(email_address, auth_provider_uuid, session)
+        # email_id = await get_email_id(email_address, auth_provider_uuid, session)
+        email_id = 9
 
-        exist = session.select(VerifiedEmail).where(VerifiedEmail.id.match(email_id)).where(VerifiedEmail.verified_at.is_not(None)).first()
-        if exist:
+        print('email_id: {}'.format(email_id))
+
+        if email_id is None:
+            return False
+
+        exists = session.query(VerifiedEmail)\
+            .filter(VerifiedEmail.id == email_id, VerifiedEmail.verified_at.isnot(None))\
+            .first()
+        if exists:
             return True
         else:
             return False
