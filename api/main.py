@@ -41,8 +41,8 @@ PGHOST = os.getenv('PGHOST')
 PGUSER = os.getenv('PGUSER')
 PGPASS = os.getenv('PGPASSWORD')
 PGPORT = os.getenv('PGPORT')
-CONNECTION_STRING= '{PGUSER}:{PGPASS}@{PGHOST}:{PGPORT}'
-engine = create_engine('postgresql://{CONNECTION_STRING}/everify')
+CONNECTION_STRING= f'postgresql://{PGUSER}:{PGPASS}@{PGHOST}:{PGPORT}/everify'
+engine = create_engine(CONNECTION_STRING)
 
 
 class VerifyRequest(BaseModel):
@@ -81,8 +81,8 @@ async def root():
 
 @app.get("/verify_page", response_class=HTMLResponse)
 async def verify_page(request: Request, email_address: str = "missing", redirect_url="test redirect"):
-    return templates.TemplateResponse("verify.html", 
-                                      {"request": request, 
+    return templates.TemplateResponse("verify.html",
+                                      {"request": request,
                                        "email_address": email_address,
                                        "redirect_url": redirect_url,
                                        "route_prefix": "",
