@@ -41,7 +41,7 @@ PGHOST = os.getenv('PGHOST')
 PGUSER = os.getenv('PGUSER')
 PGPASS = os.getenv('PGPASSWORD')
 PGPORT = int(os.getenv('PGPORT'))
-CONNECTION_STRING= f'postgresql://{PGUSER}:{PGPASS}@{PGHOST}:{PGPORT}/everify'
+CONNECTION_STRING= f'postgresql://{PGUSER}:{PGPASS}@{PGHOST}/everify'
 engine = create_engine(CONNECTION_STRING)
 
 
@@ -100,7 +100,7 @@ async def check_verification(email_address: str, auth_provider_uuid: str):
     Returns boolean value indicating whether provided email address has
     already been verified in the database.
     """
-    
+
 
     with Session(engine) as session:
         email_id = await get_email_id(email_address, auth_provider_uuid, session)
