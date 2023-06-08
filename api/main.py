@@ -3,7 +3,7 @@ load_dotenv()
 
 from typing import Annotated, Optional
 from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -11,10 +11,11 @@ import math, random
 import urllib.parse
 import math, random
 import datetime
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from db import OneTimePassword, VerifiedEmail, get_email_id
 import emailService
+import os
 
 
 description = """
@@ -36,7 +37,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-engine = create_engine('postgresql://awilliam@localhost:5432/email_verification')
+PGHOST = os.getenv('PGHOST')
+PGUSER = os.getenv('PGUSER')
+PGPASS = os.getenv('PGPASSWORD')
+PGPORT = int(os.getenv('PGPORT'))
+CONNECTION_STRING= f'postgresql://{PGUSER}:{PGPASS}@{PGHOST}/everify'
+engine = create_engine(CONNECTION_STRING)
 
 
 class VerifyRequest(BaseModel):
@@ -78,7 +84,8 @@ async def verify_page(request: Request, email_address: str = "missing", redirect
     return templates.TemplateResponse("verify.html",
                                       {"request": request,
                                        "email_address": email_address,
-                                       "redirect_url": urllib.parse.quote(email_address),
+                                       "redirect_url": redirect_url,
+                                       "route_prefix": "",
                                        "validation_failed": False})
 
 
@@ -93,6 +100,8 @@ async def check_verification(email_address: str, auth_provider_uuid: str):
     Returns boolean value indicating whether provided email address has
     already been verified in the database.
     """
+
+
     with Session(engine) as session:
         email_id = get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
 
@@ -104,10 +113,11 @@ async def check_verification(email_address: str, auth_provider_uuid: str):
         exists = session.query(VerifiedEmail)\
             .filter(VerifiedEmail.id == email_id, VerifiedEmail.verified_at.isnot(None))\
             .first()
-        if exists:
-            return True
-        else:
-            return False
+
+        r = Response()
+
+        r.status_code = 200 if exists else 401
+
 
 @app.post("/verify")
 async def verify(email_address: Annotated[str, Form()],

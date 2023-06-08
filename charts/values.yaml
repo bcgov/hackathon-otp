@@ -9,12 +9,12 @@ defaultImageTag: latest
 image:
   api:
     repository: ghcr.io/bcgov/hackathon-otp
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
     tag: ~
   schema:
     repository: ghcr.io/bcgov/hackathon-otp-schema
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
     tag: ~
   psql:
@@ -96,12 +96,12 @@ service:
 
 route:
   # -- Specifies whether a route should be created
-  enabled: false
+  enabled: true
   # -- Annotations to add to the route
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
-  host: chart-example.local
+  host: hackathon-email-verification.apps.silver.devops.gov.bc.ca
   # path: /
   tls:
     insecureEdgeTerminationPolicy: Redirect
