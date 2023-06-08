@@ -11,7 +11,7 @@ import math, random
 import urllib.parse
 import math, random
 import datetime
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from db import OneTimePassword, VerifiedEmail, get_email_id
 import emailService
@@ -20,11 +20,12 @@ import os
 
 description = """
 
-Email verification system for Basic BCeID accounts
+Email verification system for any type of user account
 
 You can:
-* **Create a OTP for an email address** (_not implemented_)
-* **Check whether an email address has already been verified** (_not implemented_)
+* **Create a OTP for an email address**
+* **Verify an account (based on auth_provider_uuid and email_address) with OTP**
+* **Check whether an email address has already been verified**
 
 """
 
@@ -44,20 +45,6 @@ PGPORT = int(os.getenv('PGPORT'))
 CONNECTION_STRING= f'postgresql://{PGUSER}:{PGPASS}@{PGHOST}/everify'
 engine = create_engine(CONNECTION_STRING)
 
-
-class VerifyRequest(BaseModel):
-    email_address: str
-
-class RequestToVerify(BaseModel):
-    email_id: Optional[int]
-    one_time_password: str
-    redirect_url: str
-
-class RequestToVerify(BaseModel):
-    email_id: Optional[int]
-    one_time_password: str
-    email_address: str
-    auth_provider_uuid: str
 
 class OTPRequest(BaseModel):
     email_address: str
@@ -103,16 +90,21 @@ async def check_verification(email_address: str, auth_provider_uuid: str):
 
 
     with Session(engine) as session:
-        email_id = await get_email_id(email_address, auth_provider_uuid, session)
+        email_id = get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
 
-        exist_statement = select(VerifiedEmail).where(VerifiedEmail.email_address.match(email_address)).where(VerifiedEmail.auth_provider_uuid.match(auth_provider_uuid)).where(VerifiedEmail.verified_at.is_not(None))
-        exist = session.scalars(exist_statement).first()
+        print('email_id: {}'.format(email_id))
+
+        if email_id is None:
+            return False
+
+        exists = session.query(VerifiedEmail)\
+            .filter(VerifiedEmail.id == email_id, VerifiedEmail.verified_at.isnot(None))\
+            .first()
 
         r = Response()
 
-        r.status_code = 200 if exist else 401
+        r.status_code = 200 if exists else 401
 
-        return r
 
 @app.post("/verify")
 async def verify(email_address: Annotated[str, Form()],
@@ -127,7 +119,7 @@ async def verify(email_address: Annotated[str, Form()],
     Verify an email address given the OTP and ID of the record
     """
     with Session(engine) as session:
-        email_id = await get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
+        email_id = get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
 
         print('email_id: {}'.format(email_id))
 
