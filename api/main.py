@@ -94,8 +94,7 @@ async def check_verification(email_address: str, auth_provider_uuid: str):
     already been verified in the database.
     """
     with Session(engine) as session:
-        # email_id = await get_email_id(email_address, auth_provider_uuid, session)
-        email_id = 9
+        email_id = get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
 
         print('email_id: {}'.format(email_id))
 
@@ -123,7 +122,7 @@ async def verify(email_address: Annotated[str, Form()],
     Verify an email address given the OTP and ID of the record
     """
     with Session(engine) as session:
-        email_id = await get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
+        email_id = get_email_id(email_address, auth_provider=auth_provider_uuid, session=session)
 
         print('email_id: {}'.format(email_id))
 
