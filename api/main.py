@@ -67,14 +67,15 @@ async def root():
     return {"message": "Hello World"}
 
 @app.get("/verify_page", response_class=HTMLResponse)
-async def verify_page(request: Request, email_address: str = "missing",route_prefix: str = "", auth_provider_uuid: str = "", redirect_url="test redirect"):
+async def verify_page(request: Request, email_address: str = "missing",route_prefix: str = "", auth_provider_uuid: str = "", redirect_url="test redirect", validation_failed = ""):
+    failed_valid = True if validation_failed.lower() == 'true' else False
     return templates.TemplateResponse("verify.html",
                                       {"request": request,
                                        "email_address": email_address,
                                        "redirect_url": redirect_url,
                                        "auth_provider_uuid": auth_provider_uuid,
                                        "route_prefix": route_prefix,
-                                       "validation_failed": False})
+                                       "validation_failed": failed_valid})
 
 
 @app.get("/is_verified")
@@ -136,7 +137,7 @@ async def verify(email_address: Annotated[str, Form()],
 
         # TODO: will want to check whether email has already been verified instead of verifying again
 
-        if password_results is not None:
+        if password_results is not None and len(password_results) > 0:
             verified_email_record = session.query(VerifiedEmail)\
                 .where(VerifiedEmail.id == email_id).first()
             print('verified_email_record: {}'.format(verified_email_record))
@@ -146,13 +147,11 @@ async def verify(email_address: Annotated[str, Form()],
             session.commit()
 
             # validation succeeded
-            return RedirectResponse(urllib.parse.unquote(redirect_url))
+            return Response(status_code=200)
 
         else:
             # validation failed
-            return templates.TemplateResponse("verify.html", {"request": {},
-                                                      "email_address": email_address,
-                                                      "validation_failed": True})
+            return Response(status_code=401)
 
 
 @app.post("/create_otp/")

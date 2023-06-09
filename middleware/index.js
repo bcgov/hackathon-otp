@@ -15,12 +15,40 @@ function getMiddleware(configuration) {
   const internalRouter = express.Router();
 
   // Handle submit form endpoint with OTP
-  internalRouter.post("/verify", (req, res, next) => {
-    console.log("Verify!");
-  });
+  internalRouter.post("/verify", async (req, res, next) => {
+    console.log(req.body);
 
-  internalRouter.get("/verify_page", (req, res, next) => {
-    return "a";
+    const verifyUrl = new URL(`${config.everifyHost}/verify`);
+
+    const data = new URLSearchParams();
+    data.append("one_time_password", "3625");
+    data.append("email_address", "pbastia@gmail.com");
+    data.append(
+      "auth_provider_uuid",
+      "fd2e5c94f4da4c1393a6e03093e25a85@bceidboth"
+    );
+    data.append("redirect_url", host);
+
+    const response = await fetch(verifyUrl, {
+      method: "POST",
+      body: data,
+    });
+
+    console.log(response.status);
+
+    if (response.ok) return res.redirect(host);
+
+    // Show the user the OTP page
+    const verifyPageUrl = new URL(`${config.everifyHost}/verify_page`);
+    verifyPageUrl.searchParams.append("route_prefix", config.routePrefix);
+    verifyPageUrl.searchParams.append("email_address", req.claims.email);
+    verifyPageUrl.searchParams.append("auth_provider_uuid", req.claims.sub);
+    verifyPageUrl.searchParams.append("validation_failed", "true");
+
+    //const verifyPageResponse = await fetch(verifyPageUrl);
+    request({
+      uri: verifyPageUrl,
+    }).pipe(res);
   });
 
   // Handle static assets for verify page
@@ -71,10 +99,13 @@ function getMiddleware(configuration) {
     verifyPageUrl.searchParams.append("email_address", req.claims.email);
     verifyPageUrl.searchParams.append("auth_provider_uuid", req.claims.sub);
 
-    //const verifyPageResponse = await fetch(verifyPageUrl);
-    request({
-      uri: verifyPageUrl,
-    }).pipe(res);
+    const verifyPageResponse = await fetch(verifyPageUrl);
+    // request({
+    //   uri: verifyPageUrl,
+    // }).pipe(res);
+    const html = await verifyPageResponse.text();
+    res.send(html);
+    res.status(201);
   });
 
   return router;
